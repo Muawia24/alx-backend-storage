@@ -6,9 +6,9 @@ DROP PROCEDURE IF EXISTS ComputeAverageScoreForUser;
 
 CREATE PROCEDURE ComputeAverageScoreForUser(IN user_id INT)
 BEGIN
-	DECLARE score_average INT;
+	DECLARE score_average DECIMAL(10, 2);
 
-	SELECT SUM(score) / COUNT(score)
+	SELECT IFNULL(SUM(score) / NULLIF(COUNT(score), 0), 0)
 	INTO score_average
 	FROM corrections
 	WHERE corrections.user_id = user_id;
