@@ -6,7 +6,7 @@ DROP PROCEDURE IF EXISTS ComputeAverageWeightedScoreForUser;
 
 CREATE PROCEDURE ComputeAverageWeightedScoreForUser(IN user_id INT)
 BEGIN
-	DECLARE weighted_score_average DECIMAL(10, 2);
+	DECLARE weighted_score_average FLOAT;
 	DECLARE weightXscore INT;
 	DECLARE weight_sum INT;
 
