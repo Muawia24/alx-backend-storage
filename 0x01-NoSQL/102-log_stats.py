@@ -42,7 +42,8 @@ def log_stats():
                 {"$limit": 10}
                 ]
             )
-
+    
+    print("IPs:")
     for ip in top_ips:
         print("\t{}: {}".format(ip["_id"], ip["count"]))
 
