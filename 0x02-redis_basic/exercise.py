@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """ 0. Writing strings to Redis """
 import redis
-from typing import Union
+from typing import Union, Callable
 import uuid
 
 
@@ -28,3 +28,28 @@ class Cache:
         self._redis.set(rand_key, data)
 
         return rand_key
+
+    def get(self, key: str,
+            fn: Callable = None,
+            ) -> Union[str, bytes, int, float]:
+        """
+        Reading from Redis
+        """
+        value = self._redis.get(key)
+
+        if fn is None:
+            return value
+
+        return fn(value)
+
+    def get_str(self, key: str) -> str:
+        """
+        Return a string value from redis
+        """
+        return self.get(key, lambda x: x.decode("utf-8"))
+
+    def get_int(self, key: str) -> int:
+        """
+         Return an integer value from redis
+        """
+        return self.get(key, lambda x: int(x))
