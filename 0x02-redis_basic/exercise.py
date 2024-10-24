@@ -6,6 +6,58 @@ import uuid
 from functools import wraps
 
 
+def replay(func: Callable) -> None:
+    """
+     display the history of calls of a particular function.
+    """
+    if func is None or not hasattr(func, '__self__'):
+        return
+
+    redis_store = getattr(func.__self__, '_redis', None)
+    if not isinstance(redis_store, redis.Redis):
+        return
+
+    fn_name = func.__qualname__
+    ins = "{}:inputs".format(fn_name)
+    outs = "{}:outputs".format(fn_name)
+
+    fn_count = 0
+    if redis_store.exists(fn_name) != 0:
+        fn_count = int(redis_store.get(fn_name))
+
+    print("{} was called {} times:".format(fn_name, fn_count))
+    ins_list = redis_store.lrange(ins, 0, -1)
+    outs_list = redis_store.lrange(outs, 0, -1)
+
+    for key, value in zip(ins_list, outs_list):
+        print("{}(*{}) -> {}".format(fn_name, key.decode("utf-8"), value))
+
+
+def call_history(method: Callable) -> Callable:
+    """
+     store the history of inputs and outputs for a
+     particular function.
+    """
+    @wraps(method)
+    def push(self, *args, **kwargs) -> Any:
+        """
+        Returns the method's output after storing its
+        inputs and output.
+        """
+        ins = "{}:inputs".format(method.__qualname__)
+        outs = "{}:outputs".format(method.__qualname__)
+        if isinstance(self._redis, redis.Redis):
+            self._redis.rpush(ins, str(args))
+        output = method(self, *args, **kwargs)
+
+        if isinstance(self._redis, redis.Redis):
+            self._redis.rpush(outs, output)
+
+        return output
+
+    return push
+
+
 def count_calls(method: Callable) -> Callable:
     """
      count how many times methods of the Cache class are
@@ -37,6 +89,7 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
+    @call_history
     @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """
