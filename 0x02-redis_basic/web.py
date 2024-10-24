@@ -26,9 +26,9 @@ def cache(func: Callable) -> Callable:
         if cached_page:
             return cached_page.decode('utf-8')
 
-        r.set(key, 0)
         response = func(url)
-        r.setex("cache:{}".format(url), 10, response)
+        if response:
+            r.setex("cache:{}".format(url), 10, response)
 
         return response
 
@@ -46,8 +46,6 @@ def get_page(url: str) -> str:
     """
     response = requests.get(url)
     if response.status_code == 200:
-        html = response.text
+        return response.text
     else:
-        html = None
-
-    return html
+        return None
